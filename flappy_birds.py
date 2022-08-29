@@ -4,8 +4,8 @@ pygame.init()
 pygame.font.init()
 
 fps = 60
-WIDTH = 800
-HEIGHT = WIDTH
+WIDTH = 700
+HEIGHT = 800
 
 BACKGROUNDCOLOR = (20, 20, 20)
 
@@ -16,14 +16,15 @@ GREEN = (50, 240, 50)
 BIRDWIDTH = 30
 BIRDHEIGHT = 30
 
+N_BORDERS = 3
 BORDERSPEED = 4
 BORDERWIDTH = 70
 DISTANCEBETWEENBORDERS = 150
 
-GRAVITY = 0.5
+GRAVITY = 0.8
 MAXACCELERATION = 8
 MAXVELOCITY = 9
-MINVELOCITY = -18
+MINVELOCITY = -10
 
 FONTSTYLE = 'ROBOTO'
 FONTSIZE = 40
@@ -63,6 +64,10 @@ class Bird():
         self.y += self.velocity
         self.velocity = 0
 
+        if self.y < 0 or self.y+self.height > HEIGHT:
+            global gamestate
+            gamestate = 1
+
     def getRect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
 
@@ -70,12 +75,19 @@ class Border():
 
     _registry = []
 
-    def __init__(self, x, y, color):
-        self.x = x
-        self.y = y
+    def __init__(self, index, color):
+        self.index = index
         self.color = color
         self.width = BORDERWIDTH
-        self.height = 300
+        self.height = random.randrange(250, HEIGHT-350)
+        self.x = (index//2) * ((WIDTH-BORDERWIDTH*N_BORDERS)/N_BORDERS + BORDERWIDTH) ???
+        self.y = 0
+        self.crossed = False
+        
+        if self.index % 2 != 0:
+            self.x = self._registry[self.index-1].x
+            self.y = self._registry[self.index-1].height + DISTANCEBETWEENBORDERS
+            self.height = HEIGHT - self.y
 
         self._registry.append(self)
 
@@ -87,40 +99,56 @@ class Border():
         
         if self.x + self.width < 0:
             self.x = WIDTH
-            if self == border1:
-                self.height = random.randrange(150, 450)
-                border2.y = self.y+self.height+DISTANCEBETWEENBORDERS
-                border2.height = HEIGHT-self.height-DISTANCEBETWEENBORDERS
-            if self == border3:
-                self.height = random.randrange(150, 450)
-                border4.y = self.y+self.height+DISTANCEBETWEENBORDERS
-                border4.height = HEIGHT-self.height-DISTANCEBETWEENBORDERS
+            self.crossed = False
+            if self.index % 2 == 0:
+                self.height = random.randrange(250, HEIGHT-350)
+            else:
+                self.y = self._registry[self.index-1].height + DISTANCEBETWEENBORDERS
+                self.height = HEIGHT - self.y
 
     def getRect(self):
         return pygame.Rect(self.x, self.y, self.width, self.height)
 
 bird = Bird(BIRDSTARTX, BIRDSTARTY, RED)
-border1 = Border(BORDERSTARTX, BORDERSTARTY, WHITE)
-border2 = Border(BORDERSTARTX, HEIGHT-border1.height, WHITE)
-border3 = Border(BORDERSTARTX+BORDERSTARTX/2+BORDERWIDTH/2, BORDERSTARTY, WHITE)
-border4 = Border(BORDERSTARTX+BORDERSTARTX/2+BORDERWIDTH/2, HEIGHT-border1.height, WHITE)
+[Border(i, WHITE) for i in range(N_BORDERS*2)]
 
 def resetGame():
     global gamestate
     gamestate = 0
+    bird.y = BIRDSTARTY
+    for border in Border._registry:
+        border.x = (border.index//2) * ((WIDTH-BORDERWIDTH*N_BORDERS)/N_BORDERS + BORDERWIDTH)
+        border.height = random.randrange(250, HEIGHT-350)
+        if border.index % 2 != 0:
+                    border.x = Border._registry[border.index-1].x
+                    border.y = Border._registry[border.index-1].height + DISTANCEBETWEENBORDERS
+                    border.height = HEIGHT - border.y
 
 def drawWindow(win):
+    global gamestate, score
     win.fill(BACKGROUNDCOLOR)
+    
+    if gamestate == 0:
+        bird.draw(win)
+        #bird.move()
+        for border in Border._registry:
+            border.move()
+            border.draw(win)
 
-    bird.move()
-    bird.draw(win)
+            if bird.x > border.x and border.crossed is False:
+                border.crossed = True
+                score += 0.5
 
-    for border in Border._registry:
-        border.move()
-        border.draw(win)
-
-        if bird.getRect().colliderect(border.getRect()):
-            print("lost")
+            #if bird.getRect().colliderect(border.getRect()):
+                #gamestate = 1
+                #break
+    else:
+        label2 = FONT.render(f'POINTS: {round(score) }', True, FONTCOLOR)
+        label_rect2 = label2.get_rect(center=(WIDTH/2, HEIGHT/2+label2.get_height()))
+        label3 = FONT.render(f'PRESS SPACEBAR TO RESTART', True, FONTCOLOR)
+        label_rect3 = label3.get_rect(center=(WIDTH/2, HEIGHT/2+label2.get_height()*2))
+        win.blit(label2, label_rect2)
+        win.blit(label3, label_rect3)
 
 def main():
     clock = pygame.time.Clock()
@@ -138,7 +166,7 @@ def main():
                 if event.key == pygame.K_SPACE:
                     bird.acceleration = -13
 
-                if gamestate == 1 and event.key == pygame.K_RETURN:
+                if gamestate == 1 and event.key == pygame.K_SPACE:
                     resetGame()
 
         drawWindow(win)
