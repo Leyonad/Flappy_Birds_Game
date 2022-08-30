@@ -80,7 +80,7 @@ class Border():
         self.color = color
         self.width = BORDERWIDTH
         self.height = random.randrange(250, HEIGHT-350)
-        self.x = (index//2) * ((WIDTH-BORDERWIDTH*N_BORDERS)/N_BORDERS + BORDERWIDTH) ???
+        self.x = WIDTH + (index//2) * ((WIDTH-BORDERWIDTH*N_BORDERS)/N_BORDERS + BORDERWIDTH)
         self.y = 0
         self.crossed = False
         
@@ -97,7 +97,7 @@ class Border():
     def move(self):
         self.x -= BORDERSPEED
         
-        if self.x + self.width < 0:
+        if self.x < 0:
             self.x = WIDTH
             self.crossed = False
             if self.index % 2 == 0:
@@ -117,7 +117,7 @@ def resetGame():
     gamestate = 0
     bird.y = BIRDSTARTY
     for border in Border._registry:
-        border.x = (border.index//2) * ((WIDTH-BORDERWIDTH*N_BORDERS)/N_BORDERS + BORDERWIDTH)
+        border.x = WIDTH + (border.index//2) * ((WIDTH-BORDERWIDTH*N_BORDERS)/N_BORDERS + BORDERWIDTH)
         border.height = random.randrange(250, HEIGHT-350)
         if border.index % 2 != 0:
                     border.x = Border._registry[border.index-1].x
@@ -130,7 +130,7 @@ def drawWindow(win):
     
     if gamestate == 0:
         bird.draw(win)
-        #bird.move()
+        bird.move()
         for border in Border._registry:
             border.move()
             border.draw(win)
@@ -139,9 +139,9 @@ def drawWindow(win):
                 border.crossed = True
                 score += 0.5
 
-            #if bird.getRect().colliderect(border.getRect()):
-                #gamestate = 1
-                #break
+            if bird.getRect().colliderect(border.getRect()):
+                gamestate = 1
+                break
     else:
         label2 = FONT.render(f'POINTS: {round(score) }', True, FONTCOLOR)
         label_rect2 = label2.get_rect(center=(WIDTH/2, HEIGHT/2+label2.get_height()))
