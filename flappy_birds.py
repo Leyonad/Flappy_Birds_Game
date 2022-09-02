@@ -113,8 +113,9 @@ bird = Bird(BIRDSTARTX, BIRDSTARTY, RED)
 [Border(i, WHITE) for i in range(N_BORDERS*2)]
 
 def resetGame():
-    global gamestate
+    global gamestate, score
     gamestate = 0
+    score = 0
     bird.y = BIRDSTARTY
     for border in Border._registry:
         border.x = WIDTH + (border.index//2) * ((WIDTH-BORDERWIDTH*N_BORDERS)/N_BORDERS + BORDERWIDTH)
